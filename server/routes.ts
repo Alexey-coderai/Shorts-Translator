@@ -23,7 +23,6 @@ async function processVideoJob(jobId: number, youtubeUrl: string) {
       throw new Error("No audio format found");
     }
 
-    // Usually webm or m4a
     const container = format.container || "mp4";
     tmpFilePath = join(tmpdir(), `${randomUUID()}.${container}`);
     const writeStream = fs.createWriteStream(tmpFilePath);
@@ -35,33 +34,42 @@ async function processVideoJob(jobId: number, youtubeUrl: string) {
         .on("error", reject);
     });
 
-    // We have the audio file, now we use OpenAI for transcription (Chinese)
     const file = fs.createReadStream(tmpFilePath);
     
     const transcription = await openai.audio.transcriptions.create({
       file: file as any,
       model: "gpt-4o-mini-transcribe",
-      language: "zh", // Chinese
+      language: "zh",
     });
 
     const chineseText = transcription.text;
     
-    // Now translate to Russian
-    const translationRes = await openai.chat.completions.create({
+    // Updated prompt for alignment
+    const alignmentRes = await openai.chat.completions.create({
       model: "gpt-5.2",
       messages: [
-        { role: "system", content: "You are a professional translator. Translate the following Chinese text into Russian. Provide ONLY the Russian translation without any other text." },
+        { 
+          role: "system", 
+          content: `You are a professional translator and linguist. 
+          Translate the following Chinese text into Russian. 
+          Also, provide a word-level or phrase-level alignment mapping between the Chinese and Russian text.
+          Return a JSON object with:
+          - "translation": The full Russian translation string.
+          - "alignment": An array of objects: { "zh": "Chinese word/phrase", "ru": "Corresponding Russian word/phrase" }.
+          The alignment should cover the entire text sequentially.` 
+        },
         { role: "user", content: chineseText }
       ],
+      response_format: { type: "json_object" }
     });
 
-    const russianText = translationRes.choices[0]?.message?.content || "";
+    const result = JSON.parse(alignmentRes.choices[0]?.message?.content || "{}");
 
-    // Save job
     await storage.updateJob(jobId, {
       status: "completed",
       transcript: chineseText,
-      translation: russianText,
+      translation: result.translation || "",
+      alignment: result.alignment || [],
     });
   } catch (error) {
     console.error("Job failed:", error);
@@ -70,7 +78,6 @@ async function processVideoJob(jobId: number, youtubeUrl: string) {
       error: error instanceof Error ? error.message : String(error),
     });
   } finally {
-    // Clean up
     if (tmpFilePath && fs.existsSync(tmpFilePath)) {
       fs.unlinkSync(tmpFilePath);
     }
@@ -98,10 +105,7 @@ export async function registerRoutes(
     try {
       const input = api.jobs.create.input.parse(req.body);
       const job = await storage.createJob(input);
-      
-      // Kick off background processing
       processVideoJob(job.id, job.youtubeUrl).catch(console.error);
-
       res.status(201).json(job);
     } catch (err) {
       if (err instanceof z.ZodError) {

@@ -6,12 +6,16 @@ import { Loader2, ArrowLeft, Download, RefreshCw, AlertTriangle } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import ReactPlayer from "react-player";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default function JobDetails() {
   const [, params] = useRoute("/jobs/:id");
   const id = parseInt(params?.id || "0");
   const { data: job, isLoading, error } = useJob(id);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   if (isLoading) {
     return (
@@ -45,6 +49,7 @@ export default function JobDetails() {
   }
 
   const isPending = job.status === "pending" || job.status === "processing";
+  const alignment = (job.alignment as Array<{ zh: string, ru: string }>) || [];
 
   return (
     <Layout>
@@ -91,7 +96,7 @@ export default function JobDetails() {
             <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto" />
             <h3 className="text-xl font-semibold">AI is working on it</h3>
             <p className="text-muted-foreground max-w-md mx-auto">
-              We are currently transcribing the Chinese audio and translating it to Russian. This usually takes 1-2 minutes.
+              We are currently transcribing the Chinese audio and translating it to Russian with word-level mapping.
             </p>
           </motion.div>
         )}
@@ -130,39 +135,85 @@ export default function JobDetails() {
 
           {/* Transcript/Translation Columns */}
           <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Chinese Source */}
-            <div className="flex flex-col h-[600px] bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden">
-              <div className="p-4 border-b border-border/50 bg-muted/30">
-                <h3 className="font-semibold text-foreground flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-red-500" />
-                  Chinese Transcript
-                </h3>
+            <TooltipProvider delayDuration={0}>
+              {/* Chinese Source */}
+              <div className="flex flex-col h-[600px] bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden">
+                <div className="p-4 border-b border-border/50 bg-muted/30">
+                  <h3 className="font-semibold text-foreground flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-red-500" />
+                    Interactive Chinese Transcript
+                  </h3>
+                </div>
+                <div className="flex-1 p-6 overflow-y-auto custom-scrollbar font-medium leading-relaxed text-lg text-foreground/80">
+                  {alignment.length > 0 ? (
+                    <div className="flex flex-wrap gap-x-1 gap-y-2">
+                      {alignment.map((item, idx) => (
+                        <Tooltip key={idx}>
+                          <TooltipTrigger asChild>
+                            <span 
+                              className={cn(
+                                "cursor-help transition-all duration-200 rounded px-1",
+                                hoveredIndex === idx ? "bg-primary/20 text-primary scale-105" : "hover:bg-muted"
+                              )}
+                              onMouseEnter={() => setHoveredIndex(idx)}
+                              onMouseLeave={() => setHoveredIndex(null)}
+                            >
+                              {item.zh}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent className="bg-primary text-primary-foreground font-bold">
+                            {item.ru}
+                          </TooltipContent>
+                        </Tooltip>
+                      ))}
+                    </div>
+                  ) : job.transcript || (
+                    <span className="text-muted-foreground italic text-base font-normal">
+                      {isPending ? "Waiting for transcription..." : "No transcript available."}
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="flex-1 p-6 overflow-y-auto custom-scrollbar font-medium leading-relaxed text-lg text-foreground/80 whitespace-pre-wrap">
-                {job.transcript || (
-                  <span className="text-muted-foreground italic text-base font-normal">
-                    {isPending ? "Waiting for transcription..." : "No transcript available."}
-                  </span>
-                )}
-              </div>
-            </div>
 
-            {/* Russian Translation */}
-            <div className="flex flex-col h-[600px] bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden">
-              <div className="p-4 border-b border-border/50 bg-primary/5">
-                <h3 className="font-semibold text-primary flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-primary" />
-                  Russian Translation
-                </h3>
+              {/* Russian Translation */}
+              <div className="flex flex-col h-[600px] bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden">
+                <div className="p-4 border-b border-border/50 bg-primary/5">
+                  <h3 className="font-semibold text-primary flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-primary" />
+                    Interactive Russian Translation
+                  </h3>
+                </div>
+                <div className="flex-1 p-6 overflow-y-auto custom-scrollbar font-medium leading-relaxed text-lg text-foreground/90">
+                  {alignment.length > 0 ? (
+                    <div className="flex flex-wrap gap-x-1 gap-y-2">
+                      {alignment.map((item, idx) => (
+                        <Tooltip key={idx}>
+                          <TooltipTrigger asChild>
+                            <span 
+                              className={cn(
+                                "cursor-help transition-all duration-200 rounded px-1",
+                                hoveredIndex === idx ? "bg-primary/20 text-primary scale-105 underline decoration-primary/40" : "hover:bg-muted"
+                              )}
+                              onMouseEnter={() => setHoveredIndex(idx)}
+                              onMouseLeave={() => setHoveredIndex(null)}
+                            >
+                              {item.ru}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent className="bg-red-500 text-white font-bold">
+                            {item.zh}
+                          </TooltipContent>
+                        </Tooltip>
+                      ))}
+                    </div>
+                  ) : job.translation || (
+                    <span className="text-muted-foreground italic text-base font-normal">
+                      {isPending ? "Waiting for translation..." : "No translation available."}
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="flex-1 p-6 overflow-y-auto custom-scrollbar font-medium leading-relaxed text-lg text-foreground/90 whitespace-pre-wrap">
-                {job.translation || (
-                  <span className="text-muted-foreground italic text-base font-normal">
-                    {isPending ? "Waiting for translation..." : "No translation available."}
-                  </span>
-                )}
-              </div>
-            </div>
+            </TooltipProvider>
           </div>
         </div>
       </div>

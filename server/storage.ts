@@ -1,38 +1,36 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
-
-// modify the interface with any CRUD methods
-// you might need
+import { db } from "./db";
+import { videoJobs, type InsertVideoJob, type VideoJob } from "@shared/schema";
+import { eq, desc } from "drizzle-orm";
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getJobs(): Promise<VideoJob[]>;
+  getJob(id: number): Promise<VideoJob | undefined>;
+  createJob(job: InsertVideoJob): Promise<VideoJob>;
+  updateJob(id: number, updates: Partial<VideoJob>): Promise<VideoJob>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-
-  constructor() {
-    this.users = new Map();
+export class DatabaseStorage implements IStorage {
+  async getJobs(): Promise<VideoJob[]> {
+    return await db.select().from(videoJobs).orderBy(desc(videoJobs.createdAt));
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  async getJob(id: number): Promise<VideoJob | undefined> {
+    const [job] = await db.select().from(videoJobs).where(eq(videoJobs.id, id));
+    return job;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+  async createJob(insertJob: InsertVideoJob): Promise<VideoJob> {
+    const [job] = await db.insert(videoJobs).values(insertJob).returning();
+    return job;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  async updateJob(id: number, updates: Partial<VideoJob>): Promise<VideoJob> {
+    const [updated] = await db.update(videoJobs)
+      .set(updates)
+      .where(eq(videoJobs.id, id))
+      .returning();
+    return updated;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

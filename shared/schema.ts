@@ -8,7 +8,7 @@ export const videoJobs = pgTable("video_jobs", {
   status: varchar("status", { length: 50 }).notNull().default("pending"), // pending, processing, completed, failed
   transcript: text("transcript"), // Original Chinese transcript
   translation: text("translation"), // Russian translation
-  alignment: jsonb("alignment"), // Word-level mapping: Array<{ zh: string, ru: string }>
+  alignment: jsonb("alignment"), // Word-level mapping: Array<{ zh: string, ru: string, pinyin: string }>
   error: text("error"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

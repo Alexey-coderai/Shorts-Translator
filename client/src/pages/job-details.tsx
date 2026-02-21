@@ -2,20 +2,27 @@ import { useRoute } from "wouter";
 import { useJob } from "@/hooks/use-jobs";
 import { Layout } from "@/components/layout";
 import { StatusBadge } from "@/components/status-badge";
-import { Loader2, ArrowLeft, Download, RefreshCw, AlertTriangle } from "lucide-react";
+import { Loader2, ArrowLeft, Download, RefreshCw, AlertTriangle, Play, Pause, SkipBack, SkipForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import ReactPlayer from "react-player";
-import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { motion } from "framer-motion";
+import { useState, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Slider } from "@/components/ui/slider";
 
 export default function JobDetails() {
   const [, params] = useRoute("/jobs/:id");
   const id = parseInt(params?.id || "0");
   const { data: job, isLoading, error } = useJob(id);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  
+  const playerRef = useRef<ReactPlayer>(null);
+  const [playing, setPlaying] = useState(false);
+  const [played, setPlayed] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [seeking, setSeeking] = useState(false);
 
   if (isLoading) {
     return (
@@ -49,7 +56,26 @@ export default function JobDetails() {
   }
 
   const isPending = job.status === "pending" || job.status === "processing";
-  const alignment = (job.alignment as Array<{ zh: string, ru: string }>) || [];
+  const alignment = (job.alignment as Array<{ zh: string, ru: string, pinyin: string }>) || [];
+
+  const handleSeekChange = (value: number[]) => {
+    setPlayed(value[0]);
+  };
+
+  const handleSeekMouseDown = () => {
+    setSeeking(true);
+  };
+
+  const handleSeekMouseUp = (value: number[]) => {
+    setSeeking(false);
+    playerRef.current?.seekTo(value[0]);
+  };
+
+  const handleProgress = (state: { played: number }) => {
+    if (!seeking) {
+      setPlayed(state.played);
+    }
+  };
 
   return (
     <Layout>
@@ -96,7 +122,7 @@ export default function JobDetails() {
             <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto" />
             <h3 className="text-xl font-semibold">AI is working on it</h3>
             <p className="text-muted-foreground max-w-md mx-auto">
-              We are currently transcribing the Chinese audio and translating it to Russian with word-level mapping.
+              We are currently transcribing Chinese, generating Pinyin, and translating to Russian.
             </p>
           </motion.div>
         )}
@@ -117,19 +143,63 @@ export default function JobDetails() {
           
           {/* Video Column */}
           <div className="lg:col-span-1 space-y-4">
-            <div className="aspect-[9/16] w-full bg-black/5 rounded-2xl overflow-hidden shadow-lg border border-border/50 relative group">
+            <div className="aspect-[9/16] w-full bg-black rounded-2xl overflow-hidden shadow-lg border border-border/50 relative">
               <ReactPlayer 
+                ref={playerRef}
                 url={job.youtubeUrl}
                 width="100%"
                 height="100%"
-                controls
-                light
+                playing={playing}
+                onProgress={handleProgress}
+                onDuration={(d) => setDuration(d)}
                 className="absolute top-0 left-0"
               />
-            </div>
-            <div className="p-4 rounded-xl bg-muted/50 border border-border/50">
-              <h4 className="font-semibold text-sm mb-2 text-foreground">Source Video</h4>
-              <p className="text-xs text-muted-foreground break-all">{job.youtubeUrl}</p>
+              
+              {/* Custom Video Controls Overlay */}
+              <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 to-transparent flex flex-col gap-2">
+                <Slider
+                  value={[played]}
+                  max={1}
+                  step={0.001}
+                  onValueChange={handleSeekChange}
+                  onPointerDown={handleSeekMouseDown}
+                  onValueCommit={handleSeekMouseUp}
+                  className="cursor-pointer"
+                />
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      className="text-white hover:bg-white/20"
+                      onClick={() => setPlaying(!playing)}
+                    >
+                      {playing ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                    </Button>
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      className="text-white hover:bg-white/20"
+                      onClick={() => playerRef.current?.seekTo(played - 0.1)}
+                    >
+                      <SkipBack className="w-5 h-5" />
+                    </Button>
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      className="text-white hover:bg-white/20"
+                      onClick={() => playerRef.current?.seekTo(played + 0.1)}
+                    >
+                      <SkipForward className="w-5 h-5" />
+                    </Button>
+                  </div>
+                  
+                  <div className="text-white text-xs font-mono">
+                    {Math.floor(played * duration)}s / {Math.floor(duration)}s
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -141,7 +211,7 @@ export default function JobDetails() {
                 <div className="p-4 border-b border-border/50 bg-muted/30">
                   <h3 className="font-semibold text-foreground flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-red-500" />
-                    Interactive Chinese Transcript
+                    Chinese (Hover for Pinyin + Russian)
                   </h3>
                 </div>
                 <div className="flex-1 p-6 overflow-y-auto custom-scrollbar font-medium leading-relaxed text-lg text-foreground/80">
@@ -161,8 +231,9 @@ export default function JobDetails() {
                               {item.zh}
                             </span>
                           </TooltipTrigger>
-                          <TooltipContent className="bg-primary text-primary-foreground font-bold">
-                            {item.ru}
+                          <TooltipContent className="bg-primary text-primary-foreground p-3 space-y-1">
+                            <div className="text-xs opacity-80 font-mono">{item.pinyin}</div>
+                            <div className="font-bold border-t border-primary-foreground/20 pt-1">{item.ru}</div>
                           </TooltipContent>
                         </Tooltip>
                       ))}
@@ -180,7 +251,7 @@ export default function JobDetails() {
                 <div className="p-4 border-b border-border/50 bg-primary/5">
                   <h3 className="font-semibold text-primary flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-primary" />
-                    Interactive Russian Translation
+                    Russian Translation
                   </h3>
                 </div>
                 <div className="flex-1 p-6 overflow-y-auto custom-scrollbar font-medium leading-relaxed text-lg text-foreground/90">
@@ -200,8 +271,9 @@ export default function JobDetails() {
                               {item.ru}
                             </span>
                           </TooltipTrigger>
-                          <TooltipContent className="bg-red-500 text-white font-bold">
-                            {item.zh}
+                          <TooltipContent className="bg-red-500 text-white p-3 space-y-1">
+                            <div className="font-bold">{item.zh}</div>
+                            <div className="text-xs opacity-90 font-mono border-t border-white/20 pt-1">{item.pinyin}</div>
                           </TooltipContent>
                         </Tooltip>
                       ))}

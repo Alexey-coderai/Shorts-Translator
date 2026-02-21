@@ -44,18 +44,18 @@ async function processVideoJob(jobId: number, youtubeUrl: string) {
 
     const chineseText = transcription.text;
     
-    // Updated prompt for alignment
+    // Updated prompt for alignment with Pinyin
     const alignmentRes = await openai.chat.completions.create({
       model: "gpt-5.2",
       messages: [
         { 
           role: "system", 
-          content: `You are a professional translator and linguist. 
+          content: `You are a professional translator and linguist specializing in Chinese and Russian. 
           Translate the following Chinese text into Russian. 
-          Also, provide a word-level or phrase-level alignment mapping between the Chinese and Russian text.
+          Also, provide a word-level or phrase-level alignment mapping between the Chinese and Russian text, including Pinyin for each Chinese segment.
           Return a JSON object with:
           - "translation": The full Russian translation string.
-          - "alignment": An array of objects: { "zh": "Chinese word/phrase", "ru": "Corresponding Russian word/phrase" }.
+          - "alignment": An array of objects: { "zh": "Chinese word/phrase", "ru": "Corresponding Russian word/phrase", "pinyin": "Pinyin for the Chinese segment" }.
           The alignment should cover the entire text sequentially.` 
         },
         { role: "user", content: chineseText }

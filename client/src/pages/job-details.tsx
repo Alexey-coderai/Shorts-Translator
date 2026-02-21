@@ -68,7 +68,16 @@ export default function JobDetails() {
 
   const handleSeekMouseUp = (value: number[]) => {
     setSeeking(false);
-    playerRef.current?.seekTo(value[0]);
+    if (playerRef.current) {
+      playerRef.current.seekTo(value[0], 'fraction');
+    }
+  };
+
+  const handleSkip = (amount: number) => {
+    if (playerRef.current) {
+      const currentTime = playerRef.current.getCurrentTime();
+      playerRef.current.seekTo(currentTime + amount, 'seconds');
+    }
   };
 
   const handleProgress = (state: { played: number }) => {
@@ -181,7 +190,7 @@ export default function JobDetails() {
                       size="icon" 
                       variant="ghost" 
                       className="text-white hover:bg-white/20"
-                      onClick={() => playerRef.current?.seekTo(played - 0.1)}
+                      onClick={() => handleSkip(-5)}
                     >
                       <SkipBack className="w-5 h-5" />
                     </Button>
@@ -189,7 +198,7 @@ export default function JobDetails() {
                       size="icon" 
                       variant="ghost" 
                       className="text-white hover:bg-white/20"
-                      onClick={() => playerRef.current?.seekTo(played + 0.1)}
+                      onClick={() => handleSkip(5)}
                     >
                       <SkipForward className="w-5 h-5" />
                     </Button>

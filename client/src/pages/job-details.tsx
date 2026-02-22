@@ -171,51 +171,21 @@ export default function JobDetails() {
                 className="absolute top-0 left-0"
               />
               
-              {/* Custom Video Controls Overlay */}
-              <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 to-transparent flex flex-col gap-2">
-                <Slider
-                  value={[played]}
-                  max={1}
-                  step={0.001}
-                  onValueChange={handleSeekChange}
-                  onPointerDown={handleSeekMouseDown}
-                  onValueCommit={handleSeekMouseUp}
-                  className="cursor-pointer"
-                />
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Button 
-                      size="icon" 
-                      variant="ghost" 
-                      className="text-white hover:bg-white/20"
-                      onClick={() => setPlaying(!playing)}
-                    >
-                      {playing ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
-                    </Button>
-                    <Button 
-                      size="icon" 
-                      variant="ghost" 
-                      className="text-white hover:bg-white/20"
-                      onClick={() => handleSkip(-5)}
-                    >
-                      <SkipBack className="w-5 h-5" />
-                    </Button>
-                    <Button 
-                      size="icon" 
-                      variant="ghost" 
-                      className="text-white hover:bg-white/20"
-                      onClick={() => handleSkip(5)}
-                    >
-                      <SkipForward className="w-5 h-5" />
-                    </Button>
-                  </div>
-                  
-                  <div className="text-white text-xs font-mono">
-                    {Math.floor(played * duration)}s / {Math.floor(duration)}s
-                  </div>
-                </div>
+              {/* Simple Video Controls Overlay */}
+              <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition-opacity">
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="w-16 h-16 text-white bg-black/40 hover:bg-black/60 rounded-full"
+                  onClick={() => setPlaying(!playing)}
+                >
+                  {playing ? <Pause className="w-8 h-8" /> : <Play className="w-8 h-8" />}
+                </Button>
               </div>
+            </div>
+            <div className="p-4 rounded-xl bg-muted/50 border border-border/50">
+              <h4 className="font-semibold text-sm mb-2 text-foreground">Source Video</h4>
+              <p className="text-xs text-muted-foreground break-all">{job.youtubeUrl}</p>
             </div>
           </div>
 

@@ -56,7 +56,14 @@ export default function JobDetails() {
   }
 
   const isPending = job.status === "pending" || job.status === "processing";
-  const alignment = (job.alignment as Array<{ zh: string, ru: string, pinyin: string }>) || [];
+  const alignment = (job.alignment as Array<{ zh: string, ru: string, pinyin: string, start?: number }>) || [];
+
+  const handlePhraseClick = (seconds?: number) => {
+    if (seconds !== undefined && playerRef.current) {
+      playerRef.current.seekTo(seconds, 'seconds');
+      setPlaying(true);
+    }
+  };
 
   const handleSeekChange = (value: number[]) => {
     setPlayed(value[0]);
@@ -231,11 +238,12 @@ export default function JobDetails() {
                           <TooltipTrigger asChild>
                             <span 
                               className={cn(
-                                "cursor-help transition-all duration-200 rounded px-1",
+                                "cursor-pointer transition-all duration-200 rounded px-1",
                                 hoveredIndex === idx ? "bg-primary/20 text-primary scale-105" : "hover:bg-muted"
                               )}
                               onMouseEnter={() => setHoveredIndex(idx)}
                               onMouseLeave={() => setHoveredIndex(null)}
+                              onClick={() => handlePhraseClick(item.start)}
                             >
                               {item.zh}
                             </span>
@@ -243,6 +251,9 @@ export default function JobDetails() {
                           <TooltipContent className="bg-primary text-primary-foreground p-3 space-y-1">
                             <div className="text-xs opacity-80 font-mono">{item.pinyin}</div>
                             <div className="font-bold border-t border-primary-foreground/20 pt-1">{item.ru}</div>
+                            {item.start !== undefined && (
+                              <div className="text-[10px] opacity-60 text-right">Click to jump to {Math.floor(item.start)}s</div>
+                            )}
                           </TooltipContent>
                         </Tooltip>
                       ))}
@@ -271,11 +282,12 @@ export default function JobDetails() {
                           <TooltipTrigger asChild>
                             <span 
                               className={cn(
-                                "cursor-help transition-all duration-200 rounded px-1",
+                                "cursor-pointer transition-all duration-200 rounded px-1",
                                 hoveredIndex === idx ? "bg-primary/20 text-primary scale-105 underline decoration-primary/40" : "hover:bg-muted"
                               )}
                               onMouseEnter={() => setHoveredIndex(idx)}
                               onMouseLeave={() => setHoveredIndex(null)}
+                              onClick={() => handlePhraseClick(item.start)}
                             >
                               {item.ru}
                             </span>
@@ -283,6 +295,9 @@ export default function JobDetails() {
                           <TooltipContent className="bg-red-500 text-white p-3 space-y-1">
                             <div className="font-bold">{item.zh}</div>
                             <div className="text-xs opacity-90 font-mono border-t border-white/20 pt-1">{item.pinyin}</div>
+                            {item.start !== undefined && (
+                              <div className="text-[10px] opacity-70 text-right">Click to jump to {Math.floor(item.start)}s</div>
+                            )}
                           </TooltipContent>
                         </Tooltip>
                       ))}

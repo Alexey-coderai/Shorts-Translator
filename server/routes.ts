@@ -52,11 +52,11 @@ async function processVideoJob(jobId: number, youtubeUrl: string) {
           role: "system", 
           content: `You are a professional translator and linguist specializing in Chinese and Russian. 
           Translate the following Chinese text into Russian. 
-          Also, provide a word-level or phrase-level alignment mapping between the Chinese and Russian text, including Pinyin for each Chinese segment.
+          Also, provide a word-level or phrase-level alignment mapping between the Chinese and Russian text, including Pinyin and the START TIME in seconds for each Chinese segment.
           Return a JSON object with:
           - "translation": The full Russian translation string.
-          - "alignment": An array of objects: { "zh": "Chinese word/phrase", "ru": "Corresponding Russian word/phrase", "pinyin": "Pinyin for the Chinese segment" }.
-          The alignment should cover the entire text sequentially.` 
+          - "alignment": An array of objects: { "zh": "Chinese word/phrase", "ru": "Corresponding Russian word/phrase", "pinyin": "Pinyin", "start": number (seconds) }.
+          The alignment should cover the entire text sequentially. Estimate the start times based on the speech rate if precise timing isn't available from the transcript text alone.` 
         },
         { role: "user", content: chineseText }
       ],

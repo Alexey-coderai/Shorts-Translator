@@ -155,132 +155,88 @@ export default function JobDetails() {
         )}
 
         {/* Content Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Video Column */}
-          <div className="lg:col-span-1 space-y-4">
-            <div className="aspect-[9/16] w-full bg-black rounded-2xl overflow-hidden shadow-lg border border-border/50 relative">
-              <ReactPlayer 
-                ref={playerRef}
-                url={job.youtubeUrl}
-                width="100%"
-                height="100%"
-                playing={playing}
-                onProgress={handleProgress}
-                onDuration={(d) => setDuration(d)}
-                className="absolute top-0 left-0"
-              />
-              
-              {/* Simple Video Controls Overlay */}
-              <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition-opacity">
-                <Button 
-                  size="icon" 
-                  variant="ghost" 
-                  className="w-16 h-16 text-white bg-black/40 hover:bg-black/60 rounded-full"
-                  onClick={() => setPlaying(!playing)}
-                >
-                  {playing ? <Pause className="w-8 h-8" /> : <Play className="w-8 h-8" />}
-                </Button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <TooltipProvider delayDuration={0}>
+            {/* Chinese Source */}
+            <div className="flex flex-col h-[700px] bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden">
+              <div className="p-4 border-b border-border/50 bg-muted/30">
+                <h3 className="font-semibold text-foreground flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-red-500" />
+                  Chinese (Hover for Pinyin + Russian)
+                </h3>
+              </div>
+              <div className="flex-1 p-6 overflow-y-auto custom-scrollbar font-bold leading-relaxed text-3xl text-foreground/80">
+                {alignment.length > 0 ? (
+                  <div className="flex flex-wrap gap-x-2 gap-y-4">
+                    {alignment.map((item, idx) => (
+                      <Tooltip key={idx}>
+                        <TooltipTrigger asChild>
+                          <span 
+                            className={cn(
+                              "cursor-pointer transition-all duration-200 rounded px-1",
+                              hoveredIndex === idx ? "bg-primary/20 text-primary scale-105" : "hover:bg-muted"
+                            )}
+                            onMouseEnter={() => setHoveredIndex(idx)}
+                            onMouseLeave={() => setHoveredIndex(null)}
+                          >
+                            {item.zh}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-primary text-primary-foreground p-3 space-y-1 text-base">
+                          <div className="text-sm opacity-80 font-mono">{item.pinyin}</div>
+                          <div className="font-bold border-t border-primary-foreground/20 pt-1">{item.ru}</div>
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                  </div>
+                ) : job.transcript || (
+                  <span className="text-muted-foreground italic text-xl font-normal">
+                    {isPending ? "Waiting for transcription..." : "No transcript available."}
+                  </span>
+                )}
               </div>
             </div>
-            <div className="p-4 rounded-xl bg-muted/50 border border-border/50">
-              <h4 className="font-semibold text-sm mb-2 text-foreground">Source Video</h4>
-              <p className="text-xs text-muted-foreground break-all">{job.youtubeUrl}</p>
+
+            {/* Russian Translation */}
+            <div className="flex flex-col h-[700px] bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden">
+              <div className="p-4 border-b border-border/50 bg-primary/5">
+                <h3 className="font-semibold text-primary flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-primary" />
+                  Russian Translation
+                </h3>
+              </div>
+              <div className="flex-1 p-6 overflow-y-auto custom-scrollbar font-bold leading-relaxed text-3xl text-foreground/90">
+                {alignment.length > 0 ? (
+                  <div className="flex flex-wrap gap-x-2 gap-y-4">
+                    {alignment.map((item, idx) => (
+                      <Tooltip key={idx}>
+                        <TooltipTrigger asChild>
+                          <span 
+                            className={cn(
+                              "cursor-pointer transition-all duration-200 rounded px-1",
+                              hoveredIndex === idx ? "bg-primary/20 text-primary scale-105 underline decoration-primary/40" : "hover:bg-muted"
+                            )}
+                            onMouseEnter={() => setHoveredIndex(idx)}
+                            onMouseLeave={() => setHoveredIndex(null)}
+                          >
+                            {item.ru}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-red-500 text-white p-3 space-y-1 text-base">
+                          <div className="font-bold">{item.zh}</div>
+                          <div className="text-sm opacity-90 font-mono border-t border-white/20 pt-1">{item.pinyin}</div>
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                  </div>
+                ) : job.translation || (
+                  <span className="text-muted-foreground italic text-xl font-normal">
+                    {isPending ? "Waiting for translation..." : "No translation available."}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-
-          {/* Transcript/Translation Columns */}
-          <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <TooltipProvider delayDuration={0}>
-              {/* Chinese Source */}
-              <div className="flex flex-col h-[600px] bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden">
-                <div className="p-4 border-b border-border/50 bg-muted/30">
-                  <h3 className="font-semibold text-foreground flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-red-500" />
-                    Chinese (Hover for Pinyin + Russian)
-                  </h3>
-                </div>
-                <div className="flex-1 p-6 overflow-y-auto custom-scrollbar font-medium leading-relaxed text-lg text-foreground/80">
-                  {alignment.length > 0 ? (
-                    <div className="flex flex-wrap gap-x-1 gap-y-2">
-                      {alignment.map((item, idx) => (
-                        <Tooltip key={idx}>
-                          <TooltipTrigger asChild>
-                            <span 
-                              className={cn(
-                                "cursor-pointer transition-all duration-200 rounded px-1",
-                                hoveredIndex === idx ? "bg-primary/20 text-primary scale-105" : "hover:bg-muted"
-                              )}
-                              onMouseEnter={() => setHoveredIndex(idx)}
-                              onMouseLeave={() => setHoveredIndex(null)}
-                              onClick={() => handlePhraseClick(item.start)}
-                            >
-                              {item.zh}
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent className="bg-primary text-primary-foreground p-3 space-y-1">
-                            <div className="text-xs opacity-80 font-mono">{item.pinyin}</div>
-                            <div className="font-bold border-t border-primary-foreground/20 pt-1">{item.ru}</div>
-                            {item.start !== undefined && (
-                              <div className="text-[10px] opacity-60 text-right">Click to jump to {Math.floor(item.start)}s</div>
-                            )}
-                          </TooltipContent>
-                        </Tooltip>
-                      ))}
-                    </div>
-                  ) : job.transcript || (
-                    <span className="text-muted-foreground italic text-base font-normal">
-                      {isPending ? "Waiting for transcription..." : "No transcript available."}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Russian Translation */}
-              <div className="flex flex-col h-[600px] bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden">
-                <div className="p-4 border-b border-border/50 bg-primary/5">
-                  <h3 className="font-semibold text-primary flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-primary" />
-                    Russian Translation
-                  </h3>
-                </div>
-                <div className="flex-1 p-6 overflow-y-auto custom-scrollbar font-medium leading-relaxed text-lg text-foreground/90">
-                  {alignment.length > 0 ? (
-                    <div className="flex flex-wrap gap-x-1 gap-y-2">
-                      {alignment.map((item, idx) => (
-                        <Tooltip key={idx}>
-                          <TooltipTrigger asChild>
-                            <span 
-                              className={cn(
-                                "cursor-pointer transition-all duration-200 rounded px-1",
-                                hoveredIndex === idx ? "bg-primary/20 text-primary scale-105 underline decoration-primary/40" : "hover:bg-muted"
-                              )}
-                              onMouseEnter={() => setHoveredIndex(idx)}
-                              onMouseLeave={() => setHoveredIndex(null)}
-                              onClick={() => handlePhraseClick(item.start)}
-                            >
-                              {item.ru}
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent className="bg-red-500 text-white p-3 space-y-1">
-                            <div className="font-bold">{item.zh}</div>
-                            <div className="text-xs opacity-90 font-mono border-t border-white/20 pt-1">{item.pinyin}</div>
-                            {item.start !== undefined && (
-                              <div className="text-[10px] opacity-70 text-right">Click to jump to {Math.floor(item.start)}s</div>
-                            )}
-                          </TooltipContent>
-                        </Tooltip>
-                      ))}
-                    </div>
-                  ) : job.translation || (
-                    <span className="text-muted-foreground italic text-base font-normal">
-                      {isPending ? "Waiting for translation..." : "No translation available."}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </TooltipProvider>
-          </div>
+          </TooltipProvider>
         </div>
       </div>
     </Layout>

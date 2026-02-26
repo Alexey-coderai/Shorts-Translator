@@ -120,14 +120,14 @@ export default function JobDetails() {
         )}
 
         {/* Content Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <TooltipProvider delayDuration={0}>
             {/* Chinese Source */}
             <div className="flex flex-col h-[700px] bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden">
               <div className="p-4 border-b border-border/50 bg-muted/30">
                 <h3 className="font-semibold text-foreground flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-red-500" />
-                  Chinese (Hover for Pinyin + Translations)
+                  Chinese
                 </h3>
               </div>
               <div className="flex-1 p-6 overflow-y-auto custom-scrollbar font-bold leading-relaxed text-2xl text-foreground/80">
@@ -163,12 +163,53 @@ export default function JobDetails() {
               </div>
             </div>
 
+            {/* Pinyin Column */}
+            <div className="flex flex-col h-[700px] bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden">
+              <div className="p-4 border-b border-border/50 bg-orange-500/5">
+                <h3 className="font-semibold text-orange-600 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-orange-500" />
+                  Pinyin
+                </h3>
+              </div>
+              <div className="flex-1 p-6 overflow-y-auto custom-scrollbar font-mono leading-relaxed text-xl text-foreground/70">
+                {alignment.length > 0 ? (
+                  <div className="flex flex-wrap gap-x-2 gap-y-4">
+                    {alignment.map((item, idx) => (
+                      <Tooltip key={idx}>
+                        <TooltipTrigger asChild>
+                          <span 
+                            className={cn(
+                              "cursor-pointer transition-all duration-200 rounded px-1",
+                              hoveredIndex === idx ? "bg-orange-500/20 text-orange-600 scale-105 underline decoration-orange-500/40" : "hover:bg-muted"
+                            )}
+                            onMouseEnter={() => setHoveredIndex(idx)}
+                            onMouseLeave={() => setHoveredIndex(null)}
+                          >
+                            {item.pinyin}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-orange-600 text-white p-3 space-y-1 text-base max-w-xs">
+                          <div className="font-bold">{item.zh}</div>
+                          <div className="font-bold border-t border-white/20 pt-1">RU: {item.ru}</div>
+                          <div className="font-bold border-t border-white/20 pt-1">EN: {item.en}</div>
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground italic text-xl font-normal">
+                    {isPending ? "Waiting for Pinyin..." : "No Pinyin available."}
+                  </span>
+                )}
+              </div>
+            </div>
+
             {/* Russian Translation */}
             <div className="flex flex-col h-[700px] bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden">
               <div className="p-4 border-b border-border/50 bg-primary/5">
                 <h3 className="font-semibold text-primary flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-primary" />
-                  Russian Translation
+                  Russian
                 </h3>
               </div>
               <div className="flex-1 p-6 overflow-y-auto custom-scrollbar font-bold leading-relaxed text-2xl text-foreground/90">
@@ -209,7 +250,7 @@ export default function JobDetails() {
               <div className="p-4 border-b border-border/50 bg-purple-500/5">
                 <h3 className="font-semibold text-purple-600 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-purple-500" />
-                  English Translation
+                  English
                 </h3>
               </div>
               <div className="flex-1 p-6 overflow-y-auto custom-scrollbar font-bold leading-relaxed text-2xl text-foreground/90">
